@@ -7,16 +7,47 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      <div class="flash-area">
-        {% for cat, msg in messages %}
-          <div class="flash {{ cat }}">{{ msg }}</div>
-        {% endfor %}
+  <header class="site-header">
+    <div class="container header-inner">
+      <div class="brand">
+        <img id="logo-img" class="logo" src="{{ url_for('static', filename='images/logo.png') }}" alt="logo">
+        <div class="brand-text">
+          <h1 id="biz-name">{{ site.bizName if site is defined else "पूजा बड़ी पापड़ उद्योग" }}</h1>
+          <p id="tagline" class="muted">{{ site.tagline_hi if site is defined else "" }}</p>
+        </div>
       </div>
-    {% endif %}
-  {% endwith %}
-  {% block content %}{% endblock %}
+      <div class="header-actions">
+        <nav class="nav">
+          <a href="#products">Products</a>
+          <a href="#about">About</a>
+          <a href="#contact">Contact</a>
+        </nav>
+        <div class="header-right">
+          <div class="contact-mini">
+            <div><strong id="mini-phone">{{ site.phone if site is defined else "" }}</strong></div>
+          </div>
+          <button id="admin-open" class="btn small gold-outline" onclick="location.href='/admin'">Admin</button>
+          <button id="cart-btn" class="btn small cart-toggle">Cart <span id="cart-count">0</span></button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div id="footer-text">{{ site.footer if site is defined else "© पूजा बड़ी पापड़ उद्योग" }}</div>
+      <div class="footer-right muted">Made with ❤ — Local Business</div>
+    </div>
+  </footer>
+
+  <script>
+    // small helper for templates
+    const SITE_LANG = localStorage.getItem('siteLang') || 'hi';
+  </script>
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>
