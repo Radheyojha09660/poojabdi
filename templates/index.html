@@ -1,20 +1,30 @@
 {% extends "layout.html" %}
 {% block content %}
-<h2>हमारे उत्पाद</h2>
+<section class="hero">
+  <h1>Handmade Snacks — Quality You Trust</h1>
+  <p class="lead">बढ़िया स्वाद, घर जैसा टेस्‍ट — सीधे आपकी रसोई से</p>
+</section>
 
-<div class="gallery">
-  {% for p in products %}
-    <div class="card">
-      <a href="{{ url_for('product_view', pid=p.id) }}">
-        <img src="{{ p.image_url() }}" alt="{{ p.name }}">
-      </a>
-      <h3>{{ p.name }}</h3>
-      <p class="desc">{{ p.description }}</p>
-      <p class="price">₹ {{ p.price or '0' }}</p>
-      <a class="btn" href="{{ url_for('add_to_cart', pid=p.id) }}">Add to Cart</a>
-    </div>
-  {% else %}
-    <p>No products yet. Admin can add from dashboard.</p>
-  {% endfor %}
-</div>
+<section>
+  <h2>Our Products</h2>
+  <div class="gallery">
+    {% for p in products %}
+      <article class="card" id="product-{{ p.id }}">
+        <a href="{{ url_for('product_view', pid=p.id) }}" class="img-wrap">
+          <img src="{{ p.image_url() }}" alt="{{ p.name }}">
+        </a>
+        <div class="card-body">
+          <h3 class="pname">{{ p.name }}</h3>
+          <p class="pdesc">{{ p.description }}</p>
+          <div class="card-footer">
+            <div class="price">₹ {{ p.price or '0' }}</div>
+            <a class="btn" href="{{ url_for('add_to_cart', pid=p.id) }}">Add to Cart</a>
+          </div>
+        </div>
+      </article>
+    {% else %}
+      <p>No products yet — add from Admin Dashboard.</p>
+    {% endfor %}
+  </div>
+</section>
 {% endblock %}
