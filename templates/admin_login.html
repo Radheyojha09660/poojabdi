@@ -1,8 +1,10 @@
 {% extends "layout.html" %}
 {% block content %}
-<h2>Admin Login</h2>
+<h2>Contact Us</h2>
 <form method="post" class="form">
-  <input type="password" name="password" placeholder="Admin password" required>
-  <button class="btn" type="submit">Login</button>
+  <input name="name" placeholder="Your name" required>
+  <input type="email" name="email" placeholder="Your email" required>
+  <textarea name="message" placeholder="Your message" required></textarea>
+  <button class="btn" type="submit">Send Message</button>
 </form>
 {% endblock %}
