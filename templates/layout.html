@@ -5,16 +5,18 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>पूजा बड़ी पापड़ उद्योग</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script defer src="{{ url_for('static', filename='js/main.js') }}"></script>
 </head>
 <body>
   <header class="site-header">
     <div class="container">
-      <h1 class="brand">पूजा बड़ी पापड़ उद्योग</h1>
+      <div class="brand">पूजा बड़ी पापड़ उद्योग</div>
       <nav class="nav">
         <a href="{{ url_for('index') }}">Home</a>
+        <a href="{{ url_for('contact') }}">Contact</a>
         <a href="{{ url_for('cart_view') }}">Cart</a>
         {% if session.get('is_admin') %}
-          <a href="{{ url_for('admin_dashboard') }}">Admin</a>
+          <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
           <a href="{{ url_for('admin_logout') }}">Logout</a>
         {% else %}
           <a href="{{ url_for('admin_login') }}">Admin Login</a>
@@ -33,14 +35,11 @@
         </div>
       {% endif %}
     {% endwith %}
-
     {% block content %}{% endblock %}
   </main>
 
   <footer class="site-footer">
-    <div class="container">
-      © 2025 पूजा बड़ी पापड़ उद्योग
-    </div>
+    <div class="container">© 2025 पूजा बड़ी पापड़ उद्योग</div>
   </footer>
 </body>
 </html>
