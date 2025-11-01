@@ -1,0 +1,25 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2>Admin Dashboard</h2>
+<div class="admin-actions">
+  <a class="btn" href="{{ url_for('admin_add') }}">Add New Product</a>
+</div>
+
+<table class="admin-table">
+  <tr><th>ID</th><th>Image</th><th>Name</th><th>Price</th><th>Actions</th></tr>
+  {% for p in products %}
+    <tr>
+      <td>{{ p.id }}</td>
+      <td><img class="thumb" src="{{ p.image_url() }}" alt="{{ p.name }}"></td>
+      <td>{{ p.name }}</td>
+      <td>₹{{ p.price }}</td>
+      <td>
+        <a href="{{ url_for('admin_edit', pid=p.id) }}">Edit</a>
+        <form action="{{ url_for('admin_delete', pid=p.id) }}" method="post" style="display:inline" onsubmit="return confirm('Delete?')">
+          <button type="submit" class="linkish">Delete</button>
+        </form>
+      </td>
+    </tr>
+  {% endfor %}
+</table>
+{% endblock %}
