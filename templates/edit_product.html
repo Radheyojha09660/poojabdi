@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2>Edit Product</h2>
+<form method="post" enctype="multipart/form-data" class="form">
+  <input name="name" value="{{ product.name }}" required>
+  <input name="price" value="{{ product.price }}">
+  <textarea name="description">{{ product.description or '' }}</textarea>
+  <p>Current image:</p>
+  <img src="{{ product.image_url() }}" alt="" class="thumb">
+  <label>Replace Image</label>
+  <input type="file" name="image" accept="image/*">
+  <button class="btn" type="submit">Update</button>
+</form>
+{% endblock %}
