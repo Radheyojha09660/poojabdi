@@ -1,76 +1,110 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
 from flask_sqlalchemy import SQLAlchemy
 import os
 
 app = Flask(__name__)
-app.secret_key = "your_secret_key"
+app.secret_key = os.environ.get("SECRET_KEY", "secretkey")
 
-# Database setup (SQLite)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///poojabdi.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# ✅ Database setup (SQLite)
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+db_path = os.path.join(BASE_DIR, "database.db")
+app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_path}"
 db = SQLAlchemy(app)
 
-# Database Model for Admin Posts
+# ============================
+# DATABASE MODELS
+# ============================
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    image_url = db.Column(db.String(200), nullable=True)
-    description = db.Column(db.Text, nullable=True)
+    name = db.Column(db.String(200))
+    description = db.Column(db.Text)
+    price = db.Column(db.Float)
+    image = db.Column(db.String(300))
 
-with app.app_context():
-    db.create_all()
-
-# Homepage
-@app.route('/')
-def index():
+# ============================
+# HOME PAGE
+# ============================
+@app.route("/")
+def home():
     products = Product.query.all()
-    return render_template('index.html', products=products)
+    return render_template("index.html", products=products)
 
-# About Page
-@app.route('/about')
-def about():
-    return render_template('about.html')
+# ============================
+# CART PAGE
+# ============================
+cart = []
 
-# Contact Page
-@app.route('/contact')
-def contact():
-    return render_template('contact.html')
+@app.route("/add_to_cart/<int:product_id>")
+def add_to_cart(product_id):
+    product = Product.query.get(product_id)
+    if product:
+        cart.append(product)
+        flash(f"{product.name} added to cart!", "success")
+    return redirect(url_for("home"))
 
-# Admin Panel
-@app.route('/admin')
+@app.route("/cart")
+def view_cart():
+    total = sum(item.price for item in cart)
+    return render_template("cart.html", cart=cart, total=total)
+
+@app.route("/remove_from_cart/<int:product_id>")
+def remove_from_cart(product_id):
+    global cart
+    cart = [item for item in cart if item.id != product_id]
+    flash("Item removed from cart.", "info")
+    return redirect(url_for("view_cart"))
+
+# ============================
+# ADMIN LOGIN
+# ============================
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        password = request.form.get("password")
+        admin_pass = os.environ.get("ADMIN_PASSWORD", "admin123")
+        if password == admin_pass:
+            return redirect(url_for("admin"))
+        flash("Incorrect password!", "danger")
+    return render_template("login.html")
+
+# ============================
+# ADMIN PANEL
+# ============================
+@app.route("/admin")
 def admin():
     products = Product.query.all()
-    return render_template('admin.html', products=products)
+    return render_template("admin.html", products=products)
 
-# Add Product (Admin)
-@app.route('/add', methods=['POST'])
+@app.route("/add_product", methods=["POST"])
 def add_product():
-    name = request.form['name']
-    image_url = request.form['image_url']
-    description = request.form['description']
-    if not name:
-        flash("Please enter product name", "error")
-        return redirect(url_for('admin'))
-    new_product = Product(name=name, image_url=image_url, description=description)
+    name = request.form["name"]
+    description = request.form["description"]
+    price = request.form["price"]
+    image = request.form["image"]
+    new_product = Product(name=name, description=description, price=float(price), image=image)
     db.session.add(new_product)
     db.session.commit()
     flash("Product added successfully!", "success")
-    return redirect(url_for('admin'))
+    return redirect(url_for("admin"))
 
-# Delete Product (Admin)
-@app.route('/delete/<int:id>')
+@app.route("/delete_product/<int:id>")
 def delete_product(id):
-    product = Product.query.get_or_404(id)
-    db.session.delete(product)
-    db.session.commit()
-    flash("Product deleted successfully!", "success")
-    return redirect(url_for('admin'))
+    product = Product.query.get(id)
+    if product:
+        db.session.delete(product)
+        db.session.commit()
+        flash("Product deleted successfully!", "success")
+    return redirect(url_for("admin"))
 
-# Render-compatible run block
+# ============================
+# CREATE DATABASE
+# ============================
+with app.app_context():
+    db.create_all()
+
+# ============================
+# RUN APP
+# ============================
 if __name__ == "__main__":
-    port = os.environ.get("PORT")
-    if not port or port == "":
-        port = 5000
-    else:
-        port = int(port)
+    port = int(os.environ.get("PORT", 5000) or 5000)
     app.run(host="0.0.0.0", port=port)
