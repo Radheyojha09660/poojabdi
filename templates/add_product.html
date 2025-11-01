@@ -1,0 +1,12 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2>Add Product</h2>
+<form method="post" enctype="multipart/form-data" class="form">
+  <input name="name" placeholder="Product name" required>
+  <input name="price" placeholder="Price (numbers only)" required>
+  <textarea name="description" placeholder="Short description"></textarea>
+  <label>Image (jpg/png/webp/gif)</label>
+  <input type="file" name="image" accept="image/*">
+  <button class="btn" type="submit">Add</button>
+</form>
+{% endblock %}
