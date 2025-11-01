@@ -1,7 +1,6 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="container admin-main">
-  <h2>Admin</h2>
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
       {% for cat, msg in messages %}
@@ -12,12 +11,12 @@
 
   {% if login_required %}
     <form method="post" action="{{ url_for('admin') }}" class="card">
-      <label>Enter admin password</label>
+      <label>Enter Admin Password</label>
       <input type="password" name="password" placeholder="Password">
       <button class="btn primary" type="submit">Login</button>
     </form>
   {% else %}
-    <p>Already logged in. <a href="{{ url_for('admin_dashboard') }}">Go to Dashboard</a></p>
+    <p>Already logged in. <a href="{{ url_for('admin_dashboard') }}">Open Dashboard</a></p>
   {% endif %}
 </div>
 {% endblock %}
