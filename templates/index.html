@@ -1,34 +1,20 @@
-<!DOCTYPE html>
-<html lang="hi">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>पूजा बड़ी पापड़ उद्योग</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-<header>
-  <h1>पूजा बड़ी पापड़ उद्योग</h1>
-  <nav>
-    <a href="/">Home</a>
-    <a href="/cart">Cart</a>
-    <a href="/login">Admin</a>
-  </nav>
-</header>
+{% extends "layout.html" %}
+{% block content %}
+<h2>हमारे उत्पाद</h2>
 
-<section class="products">
-  <h2>Our Products</h2>
-  <div class="grid">
-    {% for product in products %}
+<div class="gallery">
+  {% for p in products %}
     <div class="card">
-      <img src="{{ product.image }}" alt="{{ product.name }}">
-      <h3>{{ product.name }}</h3>
-      <p>{{ product.description }}</p>
-      <p class="price">₹ {{ product.price }}</p>
-      <a href="/add_to_cart/{{ product.id }}" class="btn">Add to Cart</a>
+      <a href="{{ url_for('product_view', pid=p.id) }}">
+        <img src="{{ p.image_url() }}" alt="{{ p.name }}">
+      </a>
+      <h3>{{ p.name }}</h3>
+      <p class="desc">{{ p.description }}</p>
+      <p class="price">₹ {{ p.price or '0' }}</p>
+      <a class="btn" href="{{ url_for('add_to_cart', pid=p.id) }}">Add to Cart</a>
     </div>
-    {% endfor %}
-  </div>
-</section>
-</body>
-</html>
+  {% else %}
+    <p>No products yet. Admin can add from dashboard.</p>
+  {% endfor %}
+</div>
+{% endblock %}
