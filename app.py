@@ -6,7 +6,6 @@ from flask import (
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
 
-# ---------- Config ----------
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change_this_secret_key")
@@ -22,7 +21,7 @@ app.config["MAX_CONTENT_LENGTH"] = 12 * 1024 * 1024  # 12 MB
 
 db = SQLAlchemy(app)
 
-# ---------- Models ----------
+# Models
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(240), nullable=False)
@@ -43,15 +42,15 @@ class Contact(db.Model):
     message = db.Column(db.Text)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
-# ---------- Helpers ----------
+# Helpers
 def allowed_file(fname):
     return "." in fname and fname.rsplit(".", 1)[1].lower() in ALLOWED_EXT
 
-# ---------- DB init ----------
+# DB init
 with app.app_context():
     db.create_all()
 
-# ---------- Public routes ----------
+# Public routes
 @app.route("/")
 def index():
     products = Product.query.order_by(Product.created_at.desc()).all()
@@ -62,7 +61,7 @@ def product_view(pid):
     p = Product.query.get_or_404(pid)
     return render_template("product_view.html", product=p)
 
-# Cart (session based)
+# Cart
 @app.route("/add-to-cart/<int:pid>")
 def add_to_cart(pid):
     cart = session.get("cart", [])
@@ -97,11 +96,11 @@ def contact():
         c = Contact(name=name, email=email, message=message)
         db.session.add(c)
         db.session.commit()
-        flash("Message received. We will contact you shortly.", "success")
+        flash("Message received. We'll contact you shortly.", "success")
         return redirect(url_for("contact"))
     return render_template("contact.html")
 
-# ---------- Admin auth ----------
+# Admin auth
 @app.route("/admin/login", methods=["GET", "POST"])
 def admin_login():
     if request.method == "POST":
@@ -129,7 +128,7 @@ def require_admin(fn):
         return fn(*a, **kw)
     return wrapper
 
-# ---------- Admin dashboard & CRUD ----------
+# Admin dashboard & CRUD
 @app.route("/admin")
 @require_admin
 def admin_dashboard():
@@ -202,7 +201,7 @@ def admin_delete(pid):
     flash("Product deleted", "info")
     return redirect(url_for("admin_dashboard"))
 
-# ---------- API for instant updates (AJAX) ----------
+# API for instant updates (AJAX)
 @app.route("/api/update_product/<int:pid>", methods=["POST"])
 @require_admin
 def api_update_product(pid):
@@ -217,12 +216,12 @@ def api_update_product(pid):
     db.session.commit()
     return jsonify({"status": "ok", "product": {"id": p.id, "name": p.name, "description": p.description, "price": p.price, "image_url": p.image_url()}})
 
-# ---------- Serve uploads ----------
+# Serve uploads
 @app.route("/uploads/<path:filename>")
 def uploaded_file(filename):
     return send_from_directory(app.config["UPLOAD_FOLDER"], filename, as_attachment=False)
 
-# ---------- Run (Render safe) ----------
+# Run (Render safe)
 if __name__ == "__main__":
     port_env = os.environ.get("PORT")
     try:
