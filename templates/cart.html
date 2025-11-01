@@ -1,0 +1,19 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2>Your Cart</h2>
+{% if products %}
+  <table class="cart-table">
+    <tr><th>Product</th><th>Price</th><th>Action</th></tr>
+    {% for item in products %}
+      <tr>
+        <td>{{ item.name }}</td>
+        <td>₹ {{ item.price }}</td>
+        <td><a href="{{ url_for('remove_from_cart', pid=item.id) }}">Remove</a></td>
+      </tr>
+    {% endfor %}
+    <tr><td>Total</td><td>₹ {{ total }}</td><td></td></tr>
+  </table>
+{% else %}
+  <p>Your cart is empty.</p>
+{% endif %}
+{% endblock %}
