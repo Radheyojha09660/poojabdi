@@ -1,46 +1,34 @@
-{% extends "layout.html" %}
-{% block content %}
-<section class="hero">
-  <img class="hero-bg" src="{{ url_for('static', filename='images/hero.jpg') }}" alt="hero">
-  <div class="container hero-content">
-    <div>
-      <h2 class="glow">{{ site.tagline_hi }}</h2>
-      <p class="muted">{{ site.about_hi }}</p>
-      <a class="btn primary" href="#products">उत्पाद देखें</a>
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>पूजा बड़ी पापड़ उद्योग</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header>
+  <h1>पूजा बड़ी पापड़ उद्योग</h1>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/cart">Cart</a>
+    <a href="/login">Admin</a>
+  </nav>
+</header>
+
+<section class="products">
+  <h2>Our Products</h2>
+  <div class="grid">
+    {% for product in products %}
+    <div class="card">
+      <img src="{{ product.image }}" alt="{{ product.name }}">
+      <h3>{{ product.name }}</h3>
+      <p>{{ product.description }}</p>
+      <p class="price">₹ {{ product.price }}</p>
+      <a href="/add_to_cart/{{ product.id }}" class="btn">Add to Cart</a>
     </div>
+    {% endfor %}
   </div>
 </section>
-
-<section id="products" class="container section">
-  <div class="section-head">
-    <h3>हमारे उत्पाद</h3>
-    <div class="view-controls">
-      <button id="toggle-view" class="btn ghost">List View</button>
-      <input id="search" class="search-input" placeholder="Search...">
-    </div>
-  </div>
-
-  <div id="products-grid" class="cards"></div>
-  <div id="products-list" class="list-view"></div>
-</section>
-
-<section id="about" class="container section">
-  <h3>हमारे बारे में</h3>
-  <p>{{ site.about_hi }}</p>
-</section>
-
-<section id="contact" class="container section">
-  <h3>Contact</h3>
-  <p>Address: {{ site.address }}</p>
-  <p>Phone: {{ site.phone }}</p>
-  <p>Email: {{ site.email }}</p>
-</section>
-
-<!-- cart drawer -->
-<aside id="cart-drawer" class="cart-drawer" aria-hidden="true">
-  <div class="cart-header"><h3>Cart</h3><button id="cart-close" class="btn ghost">Close</button></div>
-  <div id="cart-items" class="cart-items"></div>
-  <div class="cart-footer"><div id="cart-subtotal">₹0</div><button id="checkout" class="btn primary">Checkout</button></div>
-</aside>
-<div id="cart-overlay" class="cart-overlay" aria-hidden="true"></div>
-{% endblock %}
+</body>
+</html>
