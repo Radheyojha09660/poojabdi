@@ -1,36 +1,36 @@
 import os
 from pathlib import Path
-from flask import (
-    Flask, render_template, request, redirect, url_for, flash,
-    jsonify, session, send_from_directory, abort
-)
+from flask import (Flask, render_template, request, redirect, url_for,
+                   flash, jsonify, session, send_from_directory)
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
+import json
 import csv
 from io import StringIO
-import json
 
-# ---- Config / Paths ----
+# ------------- CONFIG / PATHS -------------
 BASE_DIR = Path(__file__).resolve().parent
 UPLOAD_FOLDER = BASE_DIR / "static" / "uploads"
+IMAGES_FOLDER = BASE_DIR / "static" / "images"
 DATA_DIR = BASE_DIR / "instance"
 DB_PATH = DATA_DIR / "site.db"
-DEFAULT_ADMIN_PASS = os.environ.get("ADMIN_PASS", "admin123")
 
+# ensure folders
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(IMAGES_FOLDER, exist_ok=True)
 os.makedirs(DATA_DIR, exist_ok=True)
 
-# ---- Flask App ----
+# ------------- FLASK APP -------------
 app = Flask(__name__, static_folder="static", template_folder="templates")
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change-this-secret")
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["UPLOAD_FOLDER"] = str(UPLOAD_FOLDER)
-app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024  # 8 MB
+app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024  # 8MB upload limit
 
 db = SQLAlchemy(app)
 
-# ---- Models ----
+# ------------- MODELS -------------
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name_hi = db.Column(db.String(255))
@@ -45,7 +45,7 @@ class Setting(db.Model):
     key = db.Column(db.String(128), primary_key=True)
     value = db.Column(db.Text)
 
-# ---- Helpers ----
+# ------------- HELPERS -------------
 def get_setting(key, default=None):
     s = Setting.query.get(key)
     return s.value if s else default
@@ -63,7 +63,7 @@ def save_upload(file_storage):
     if not file_storage:
         return None
     filename = secure_filename(file_storage.filename)
-    if filename == "":
+    if not filename:
         return None
     dest = Path(app.config["UPLOAD_FOLDER"]) / filename
     base, ext = os.path.splitext(filename)
@@ -73,55 +73,48 @@ def save_upload(file_storage):
         dest = Path(app.config["UPLOAD_FOLDER"]) / filename
         i += 1
     file_storage.save(dest)
+    # return path usable in templates
     return f"/static/uploads/{filename}"
 
 def ensure_defaults():
-    # create DB defaults if missing
     defaults = {
         "bizName": "पूजा बड़ी पापड़ उद्योग",
         "tagline_hi": "स्वाद और परंपरा — सीधे आपकी रसोई में",
-        "tagline_en": "Fresh & Traditional — Straight to your kitchen",
+        "about_hi": "हम पारंपरिक विधि से पापड़ बनाते हैं।",
         "address": "मोहता का चौक",
         "phone": "9660131376",
         "email": "ojha.radhey096@gmail.com",
-        "about_hi": "हम पारंपरिक विधि से हाथ से पापड़ बनाते हैं।",
-        "about_en": "We handcraft traditional papads using authentic recipes.",
-        "footer": "© पूजा बड़ी पापड़ उद्योग",
-        "social_json": json.dumps({"whatsapp":"","facebook":"","instagram":"","youtube":"","telegram":""}),
-        "slider_json": json.dumps([])
+        "footer": "© पूजा बड़ी पापड़ उद्योग"
     }
     for k, v in defaults.items():
         if Setting.query.get(k) is None:
             db.session.add(Setting(key=k, value=v))
     if Product.query.count() == 0:
+        # seed two sample products (use external images or local placeholders)
         p1 = Product(name_hi="मूंग बड़ी", name_en="Moong Badi", price="₹60 / 250g", price_num=60,
-                     img="https://bazaarmantri.com/images/products/40409_1.jpg",
-                     description_hi="ताज़ा मूंग बड़ी", description_en="Fresh Moong Badi")
+                     img="/static/images/no-image.png", description_hi="ताज़ा मूंग बड़ी", description_en="Fresh Moong Badi")
         p2 = Product(name_hi="मसाला पापड़", name_en="Masala Papad", price="₹55 / 200g", price_num=55,
-                     img="https://5.imimg.com/data5/JR/NA/MY-67982735/moong-bari-namkeen-500x500.jpg",
-                     description_hi="मसालेदार पापड़", description_en="Spicy Masala Papad")
+                     img="/static/images/no-image.png", description_hi="मसालेदार पापड़", description_en="Spicy Masala Papad")
         db.session.add_all([p1, p2])
     db.session.commit()
 
-# ---- CLI command to init DB ----
+# CLI command to init DB
 @app.cli.command("init-db")
 def init_db():
     db.create_all()
     ensure_defaults()
-    print("Database created & seeded.")
+    print("DB initialized & defaults set.")
 
-# ---- Frontend Routes ----
+# ------------- ROUTES -------------
 @app.route("/")
 def index():
     site = {
         "bizName": get_setting("bizName"),
         "tagline_hi": get_setting("tagline_hi"),
-        "tagline_en": get_setting("tagline_en"),
+        "about_hi": get_setting("about_hi"),
         "address": get_setting("address"),
         "phone": get_setting("phone"),
         "email": get_setting("email"),
-        "about_hi": get_setting("about_hi"),
-        "about_en": get_setting("about_en"),
         "footer": get_setting("footer")
     }
     return render_template("index.html", site=site)
@@ -137,55 +130,54 @@ def products_json():
             "name_en": p.name_en,
             "price": p.price,
             "price_num": p.price_num,
-            "img": p.img,
+            "img": p.img or "/static/images/no-image.png",
             "description_hi": p.description_hi,
             "description_en": p.description_en
         })
     return jsonify(out)
 
-# Cart endpoints (session)
-@app.route("/api/cart", methods=["GET", "POST", "DELETE"])
+# CART (session-based)
+@app.route("/api/cart", methods=["GET","POST","DELETE"])
 def api_cart():
     cart = session.get("cart", {})
     if request.method == "GET":
         return jsonify(cart)
     if request.method == "POST":
-        payload = request.json or {}
+        payload = request.get_json() or {}
         pid = str(payload.get("id"))
         qty = int(payload.get("qty", 1))
         if not pid:
-            return jsonify({"error": "no id"}), 400
+            return jsonify({"error":"no id"}), 400
         cart = session.get("cart", {})
         cart[pid] = cart.get(pid, 0) + qty
         session["cart"] = cart
         return jsonify(cart)
     if request.method == "DELETE":
-        payload = request.json or {}
+        payload = request.get_json() or {}
         pid = str(payload.get("id"))
         if not pid:
-            return jsonify({"error": "no id"}), 400
+            return jsonify({"error":"no id"}), 400
         cart = session.get("cart", {})
         if pid in cart:
             del cart[pid]
             session["cart"] = cart
         return jsonify(cart)
 
-# ---- Admin auth + pages ----
+# ------------- ADMIN -------------
 def is_logged_in():
     return session.get("admin_logged", False)
 
-@app.route("/admin", methods=["GET", "POST"])
+@app.route("/admin", methods=["GET","POST"])
 def admin():
     if request.method == "POST":
         password = request.form.get("password", "")
-        admin_pass = os.environ.get("ADMIN_PASS", DEFAULT_ADMIN_PASS)
+        admin_pass = os.environ.get("ADMIN_PASS", "admin123")
         if password == admin_pass:
             session["admin_logged"] = True
-            flash("Login successful", "success")
+            flash("Logged in", "success")
             return redirect(url_for("admin_dashboard"))
-        else:
-            flash("Incorrect password", "danger")
-            return redirect(url_for("admin"))
+        flash("Incorrect password", "danger")
+        return redirect(url_for("admin"))
     if not is_logged_in():
         return render_template("admin.html", login_required=True)
     return redirect(url_for("admin_dashboard"))
@@ -204,11 +196,11 @@ def admin_logout():
     flash("Logged out", "info")
     return redirect(url_for("admin"))
 
-# ---- Admin APIs ----
-@app.route("/admin/api/product", methods=["POST", "PUT", "DELETE"])
+# Admin APIs
+@app.route("/admin/api/product", methods=["POST","PUT","DELETE"])
 def admin_product():
     if not is_logged_in():
-        return jsonify({"error": "unauthorized"}), 401
+        return jsonify({"error":"unauthorized"}), 401
     if request.method == "POST":
         data = request.form.to_dict()
         img = data.get("img")
@@ -231,7 +223,7 @@ def admin_product():
         pid = data.get("id")
         p = Product.query.get(pid)
         if not p:
-            return jsonify({"error": "not found"}), 404
+            return jsonify({"error":"not found"}), 404
         if "file" in request.files and request.files["file"].filename:
             p.img = save_upload(request.files["file"])
         else:
@@ -249,7 +241,7 @@ def admin_product():
         pid = data.get("id")
         p = Product.query.get(pid)
         if not p:
-            return jsonify({"error": "not found"}), 404
+            return jsonify({"error":"not found"}), 404
         db.session.delete(p)
         db.session.commit()
         return jsonify({"ok": True})
@@ -257,10 +249,10 @@ def admin_product():
 @app.route("/admin/api/upload", methods=["POST"])
 def admin_upload():
     if not is_logged_in():
-        return jsonify({"error": "unauthorized"}), 401
+        return jsonify({"error":"unauthorized"}), 401
     f = request.files.get("file")
     if not f:
-        return jsonify({"error": "no file"}), 400
+        return jsonify({"error":"no file"}), 400
     path = save_upload(f)
     return jsonify({"path": path})
 
@@ -268,8 +260,7 @@ def admin_upload():
 def admin_settings():
     if not is_logged_in():
         return jsonify({"error":"unauthorized"}), 401
-    payload = request.form.to_dict()
-    for k, v in payload.items():
+    for k, v in request.form.items():
         set_setting(k, v)
     return jsonify({"ok": True})
 
@@ -284,15 +275,15 @@ def export_products_csv():
     for p in products:
         cw.writerow([p.id, p.name_hi, p.name_en, p.price, p.price_num, p.img, p.description_hi, p.description_en])
     output = si.getvalue()
-    return app.response_class(output, mimetype='text/csv', headers={"Content-Disposition":"attachment;filename=products.csv"})
+    return app.response_class(output, mimetype="text/csv", headers={"Content-Disposition":"attachment;filename=products.csv"})
 
 @app.route("/admin/import-products", methods=["POST"])
 def import_products():
     if not is_logged_in():
-        return jsonify({"error":"unauthorized"}),401
+        return jsonify({"error":"unauthorized"}), 401
     f = request.files.get("file")
     if not f:
-        return jsonify({"error":"no file"}),400
+        return jsonify({"error":"no file"}), 400
     stream = StringIO(f.stream.read().decode("utf-8"))
     reader = csv.DictReader(stream)
     added = 0
@@ -313,25 +304,19 @@ def import_products():
     db.session.commit()
     return jsonify({"ok": True, "added": added})
 
-# ---- Static uploads route (handled by flask static, but keep helper) ----
+# serve uploaded files (flask static handles /static/uploads but keep helper)
 @app.route("/uploads/<path:filename>")
 def uploaded_file(filename):
     return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
 
-# ---- Fallback: default image url ----
-def default_image():
-    return "/static/images/no-image.png"
-
-# ---- Error handlers ----
+# error handler
 @app.errorhandler(500)
 def internal_error(e):
-    # show nice page but also log
-    app.logger.exception("Server error:")
+    app.logger.exception("Server error")
     return render_template("500.html", error=e), 500
 
-# ---- Run ----
+# run (local)
 if __name__ == "__main__":
-    # ensure DB exists
     db.create_all()
     ensure_defaults()
     port = int(os.environ.get("PORT", 10000))
