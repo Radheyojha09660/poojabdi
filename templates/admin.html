@@ -1,22 +1,36 @@
-{% extends "layout.html" %}
-{% block content %}
-<div class="container admin-main">
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      {% for cat, msg in messages %}
-        <div class="flash {{ cat }}">{{ msg }}</div>
-      {% endfor %}
-    {% endif %}
-  {% endwith %}
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header><h1>Admin Panel</h1></header>
 
-  {% if login_required %}
-    <form method="post" action="{{ url_for('admin') }}" class="card">
-      <label>Enter Admin Password</label>
-      <input type="password" name="password" placeholder="Password">
-      <button class="btn primary" type="submit">Login</button>
-    </form>
-  {% else %}
-    <p>Already logged in. <a href="{{ url_for('admin_dashboard') }}">Open Dashboard</a></p>
-  {% endif %}
-</div>
-{% endblock %}
+<section class="admin">
+  <h2>Add New Product</h2>
+  <form action="/add_product" method="POST">
+    <input type="text" name="name" placeholder="Product Name" required>
+    <input type="text" name="description" placeholder="Description" required>
+    <input type="number" name="price" placeholder="Price" required>
+    <input type="text" name="image" placeholder="Image URL" required>
+    <button type="submit">Add Product</button>
+  </form>
+
+  <h2>All Products</h2>
+  <table>
+    <tr><th>ID</th><th>Name</th><th>Price</th><th>Action</th></tr>
+    {% for p in products %}
+    <tr>
+      <td>{{ p.id }}</td>
+      <td>{{ p.name }}</td>
+      <td>₹{{ p.price }}</td>
+      <td><a href="/delete_product/{{ p.id }}">Delete</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+</section>
+</body>
+</html>
