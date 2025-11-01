@@ -1,10 +1,23 @@
 {% extends "layout.html" %}
 {% block content %}
-<h2>Contact Us</h2>
-<form method="post" class="form">
-  <input name="name" placeholder="Your name" required>
-  <input type="email" name="email" placeholder="Your email" required>
-  <textarea name="message" placeholder="Your message" required></textarea>
-  <button class="btn" type="submit">Send Message</button>
-</form>
+<div class="center-card">
+  <h2>Admin Login</h2>
+  <form method="post" class="form">
+    <input type="password" name="password" placeholder="Admin password" required>
+    <label><input type="checkbox" id="showpw"> Show password</label>
+    <button class="btn" type="submit">Login</button>
+  </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  const cb = document.getElementById('showpw');
+  if(cb){
+    cb.addEventListener('change', function(){
+      const pw = document.querySelector('input[name="password"]');
+      if(pw) pw.type = cb.checked ? 'text' : 'password';
+    });
+  }
+});
+</script>
 {% endblock %}
