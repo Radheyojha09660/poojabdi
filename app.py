@@ -1,97 +1,76 @@
-import os
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
-from werkzeug.utils import secure_filename
+import os
 
-# ---------------------------
-# Flask App Configuration
-# ---------------------------
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "mysecret")
+app.secret_key = "your_secret_key"
 
-# Database Configuration (SQLite local file)
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///site.db"
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+# Database setup (SQLite)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///poojabdi.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# ---------------------------
-# Database Model
-# ---------------------------
+# Database Model for Admin Posts
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(120), nullable=False)
-    description = db.Column(db.String(500))
-    price = db.Column(db.Float, nullable=False)
-    image = db.Column(db.String(300))
+    name = db.Column(db.String(100), nullable=False)
+    image_url = db.Column(db.String(200), nullable=True)
+    description = db.Column(db.Text, nullable=True)
 
-# ---------------------------
-# Routes
-# ---------------------------
-@app.route("/")
-def home():
+with app.app_context():
+    db.create_all()
+
+# Homepage
+@app.route('/')
+def index():
     products = Product.query.all()
-    return render_template("index.html", products=products)
+    return render_template('index.html', products=products)
 
-@app.route("/admin", methods=["GET", "POST"])
+# About Page
+@app.route('/about')
+def about():
+    return render_template('about.html')
+
+# Contact Page
+@app.route('/contact')
+def contact():
+    return render_template('contact.html')
+
+# Admin Panel
+@app.route('/admin')
 def admin():
-    if request.method == "POST":
-        password = request.form.get("password")
-        admin_pass = os.getenv("ADMIN_PASSWORD", "admin123")
-        if password == admin_pass:
-            products = Product.query.all()
-            return render_template("admin.html", products=products)
-        else:
-            flash("गलत पासवर्ड!", "danger")
-    return render_template("login.html")
+    products = Product.query.all()
+    return render_template('admin.html', products=products)
 
-@app.route("/add_product", methods=["POST"])
+# Add Product (Admin)
+@app.route('/add', methods=['POST'])
 def add_product():
-    name = request.form["name"]
-    description = request.form["description"]
-    price = request.form["price"]
-    image = request.form["image"]
-
-    product = Product(name=name, description=description, price=price, image=image)
-    db.session.add(product)
+    name = request.form['name']
+    image_url = request.form['image_url']
+    description = request.form['description']
+    if not name:
+        flash("Please enter product name", "error")
+        return redirect(url_for('admin'))
+    new_product = Product(name=name, image_url=image_url, description=description)
+    db.session.add(new_product)
     db.session.commit()
-    flash("प्रोडक्ट जोड़ा गया!", "success")
-    return redirect(url_for("admin"))
+    flash("Product added successfully!", "success")
+    return redirect(url_for('admin'))
 
-@app.route("/delete_product/<int:id>")
+# Delete Product (Admin)
+@app.route('/delete/<int:id>')
 def delete_product(id):
     product = Product.query.get_or_404(id)
     db.session.delete(product)
     db.session.commit()
-    flash("प्रोडक्ट डिलीट किया गया!", "info")
-    return redirect(url_for("admin"))
+    flash("Product deleted successfully!", "success")
+    return redirect(url_for('admin'))
 
-@app.route("/update_product/<int:id>", methods=["POST"])
-def update_product(id):
-    product = Product.query.get_or_404(id)
-    product.name = request.form["name"]
-    product.description = request.form["description"]
-    product.price = request.form["price"]
-    product.image = request.form["image"]
-    db.session.commit()
-    flash("प्रोडक्ट अपडेट हुआ!", "success")
-    return redirect(url_for("admin"))
-
-# ---------------------------
-# Social Links JSON API
-# ---------------------------
-@app.route("/social")
-def social():
-    return jsonify({
-        "whatsapp": "https://wa.me/919999999999",
-        "facebook": "https://facebook.com/poojabadi",
-        "instagram": "https://instagram.com/poojabadi",
-    })
-
-# ---------------------------
-# Main entry point
-# ---------------------------
+# Render-compatible run block
 if __name__ == "__main__":
-    # ✅ FIX: Flask app context added for Render
-    with app.app_context():
-        db.create_all()
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    port = os.environ.get("PORT")
+    if not port or port == "":
+        port = 5000
+    else:
+        port = int(port)
+    app.run(host="0.0.0.0", port=port)
