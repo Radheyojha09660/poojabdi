@@ -31,5 +31,6 @@ body{font-family:Inter,system-ui,Arial,sans-serif; margin:0; background:#f7fbfc;
 .flash.danger{background:#fff1f2;color:#9b1c1c}
 .linkish{background:none;border:none;color:#0077cc;text-decoration:underline;cursor:pointer}
 .site-footer{background:#fff;padding:12px;margin-top:26px;text-align:center;color:#333}
+.center-card{max-width:420px;margin:36px auto;padding:20px;background:#fff;border-radius:10px;box-shadow:0 8px 24px rgba(10,10,20,0.06)}
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:800px){.product-single{flex-direction:column}.product-single img{width:100%;height:auto}}
