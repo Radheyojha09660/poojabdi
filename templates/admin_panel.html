@@ -8,21 +8,11 @@
     <div class="admin-card">
       <h3>Site Info</h3>
       <form id="site-form">
-        <label>Business Name</label>
-        <input id="bizName" name="bizName" value="{{ settings.get('bizName','') }}">
-        <label>Tagline (HI)</label>
-        <input id="tag_hi" name="tagline_hi" value="{{ settings.get('tagline_hi','') }}">
-        <label>Tagline (EN)</label>
-        <input id="tag_en" name="tagline_en" value="{{ settings.get('tagline_en','') }}">
-        <label>Address</label>
-        <input id="address" name="address" value="{{ settings.get('address','') }}">
-        <label>Phone</label>
-        <input id="phone" name="phone" value="{{ settings.get('phone','') }}">
-        <label>Email</label>
-        <input id="email" name="email" value="{{ settings.get('email','') }}">
-        <div style="margin-top:8px">
-          <button id="save-site" class="btn primary">Save Site Info</button>
-        </div>
+        <label>Business Name</label><input name="bizName" value="{{ settings.get('bizName','') }}">
+        <label>Tagline HI</label><input name="tagline_hi" value="{{ settings.get('tagline_hi','') }}">
+        <label>Address</label><input name="address" value="{{ settings.get('address','') }}">
+        <label>Phone</label><input name="phone" value="{{ settings.get('phone','') }}">
+        <button id="save-site" class="btn primary">Save</button>
       </form>
     </div>
 
@@ -31,9 +21,9 @@
       <form id="product-form" enctype="multipart/form-data">
         <input name="name_hi" placeholder="Name (HI)">
         <input name="name_en" placeholder="Name (EN)">
-        <input name="price" placeholder="Price (₹60 / 250g)">
-        <input name="price_num" placeholder="Price numeric (60)">
-        <input name="img" placeholder="Image URL (or upload below)">
+        <input name="price" placeholder="Price (₹)">
+        <input name="price_num" placeholder="Price numeric">
+        <input name="img" placeholder="Image URL (or upload)">
         <input type="file" name="file">
         <button id="add-product" class="btn">Add Product</button>
       </form>
@@ -41,11 +31,8 @@
       <div id="products-list-admin" style="margin-top:10px">
         {% for p in products %}
           <div class="product-row">
-            <img src="{{ p.img }}" class="thumb" onerror="this.src='{{ url_for('static', filename='images/no-image.png') }}'">
-            <div>
-              <div><strong>{{ p.name_hi or p.name_en }}</strong></div>
-              <div class="small">{{ p.price }}</div>
-            </div>
+            <img src="{{ p.img or url_for('static', filename='images/no-image.png') }}" class="thumb" onerror="this.src='{{ url_for('static', filename='images/no-image.png') }}'">
+            <div><strong>{{ p.name_hi or p.name_en }}</strong><div class="small">{{ p.price }}</div></div>
             <div class="actions">
               <button class="btn small edit" data-id="{{ p.id }}">Edit</button>
               <button class="btn small danger delete" data-id="{{ p.id }}">Delete</button>
@@ -53,18 +40,8 @@
           </div>
         {% endfor %}
       </div>
-
-      <div style="margin-top:12px">
-        <a class="btn" href="{{ url_for('export_products_csv') }}">Export CSV</a>
-        <form action="{{ url_for('import_products') }}" method="post" enctype="multipart/form-data" style="display:inline-block">
-          <input type="file" name="file">
-          <button class="btn ghost" type="submit">Import CSV</button>
-        </form>
-      </div>
     </div>
   </div>
 </div>
-<script>
-  // small admin frontend scripts are in static/js/main.js
-</script>
+<script>/* admin JS in static/js/main.js */</script>
 {% endblock %}
