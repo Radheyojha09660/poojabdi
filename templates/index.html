@@ -1,69 +1,52 @@
 {% extends "layout.html" %}
 {% block content %}
-<header class="site-header">
-  <div class="container header-inner">
-    <div class="brand">
-      <img id="logo-img" class="logo" src="{{ site.get('logo','') or '' }}" alt="logo">
-      <div class="brand-text">
-        <h1 id="biz-name">{{ site.bizName }}</h1>
-        <p id="tagline" class="muted">{{ site.tagline_hi }}</p>
-      </div>
+<section class="hero">
+  <img id="hero-bg" class="hero-bg" src="{{ url_for('static', filename='images/hero.jpg') }}" alt="hero">
+  <div class="container hero-content">
+    <div class="hero-left">
+      <h2 class="glow">{{ site.tagline_hi }}</h2>
+      <p class="muted">{{ site.about_hi }}</p>
+      <a class="btn primary" href="#products">उत्पाद देखें</a>
     </div>
-    <div class="header-actions">
-      <nav class="nav">
-        <a href="#products">Products</a>
-        <a href="#about">About</a>
-        <a href="#contact">Contact</a>
-      </nav>
-      <div class="header-right">
-        <div class="contact-mini">
-          <div><strong id="mini-phone">{{ site.phone }}</strong></div>
+    <div class="hero-right">
+      <!-- featured product area -->
+      <div class="hero-card">
+        <img id="hero-product" src="{{ url_for('static', filename='images/no-image.png') }}" alt="featured">
+        <div class="hero-card-info">
+          <div id="hero-pname">Featured</div>
+          <div id="hero-pprice" class="price">₹0</div>
         </div>
-        <button id="admin-open" class="btn small gold-outline" onclick="location.href='/admin'">Admin</button>
-        <button id="cart-btn" class="btn small cart-toggle">Cart <span id="cart-count">0</span></button>
       </div>
     </div>
   </div>
-</header>
+</section>
 
-<main>
-  <section class="hero">
-    <img id="hero-bg" class="hero-bg" src="" alt="hero">
-    <div class="container hero-content">
-      <div class="hero-left">
-        <h2 class="glow">{{ site.tagline_hi }}</h2>
-        <p class="muted">{{ site.about_hi }}</p>
-        <a class="btn primary" href="#products">उत्पाद देखें</a>
-      </div>
+<section id="products" class="container section">
+  <div class="section-head">
+    <div><h3>हमारे उत्पाद</h3><p class="muted">हाथ से बने पारंपरिक पापड़ — चुनें और देखें।</p></div>
+    <div class="view-controls">
+      <button id="toggle-view" class="btn ghost">List View</button>
+      <input id="search" placeholder="Search products..." class="search-input">
     </div>
-  </section>
+  </div>
 
-  <section id="products" class="container section">
-    <div class="section-head">
-      <h3>हमारे उत्पाद</h3>
-      <div>
-        <input id="search" placeholder="Search..." />
-        <button id="toggle-view" class="btn ghost">List View</button>
-      </div>
-    </div>
+  <div id="products-grid" class="cards"></div>
+  <div id="products-list" class="list-view"></div>
+</section>
 
-    <div id="products-grid" class="cards"></div>
-    <div id="products-list" class="list-view"></div>
-  </section>
+<section id="about" class="container section">
+  <h3>हमारे बारे में</h3>
+  <p>{{ site.about_hi }}</p>
+</section>
 
-  <section id="about" class="container section">
-    <h3>हमारे बारे में</h3>
-    <p>{{ site.about_hi }}</p>
-  </section>
+<section id="contact" class="container section">
+  <h3>Contact</h3>
+  <p>Address: {{ site.address }}</p>
+  <p>Phone: {{ site.phone }}</p>
+  <p>Email: {{ site.email }}</p>
+</section>
 
-  <section id="contact" class="container section">
-    <h3>Contact</h3>
-    <p>Address: {{ site.address }}</p>
-    <p>Phone: {{ site.phone }}</p>
-    <p>Email: {{ site.email }}</p>
-  </section>
-</main>
-
+<!-- cart drawer -->
 <aside id="cart-drawer" class="cart-drawer" aria-hidden="true">
   <div class="cart-header">
     <h3>Cart</h3>
@@ -81,8 +64,4 @@
   </div>
 </aside>
 <div id="cart-overlay" class="cart-overlay" aria-hidden="true"></div>
-
-<footer class="site-footer container">
-  <div>{{ site.footer }} • {{ site.address }}</div>
-</footer>
 {% endblock %}
