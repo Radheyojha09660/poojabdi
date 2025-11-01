@@ -1,0 +1,72 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container admin-main">
+  {% if login_required %}
+    <h2>Admin Login</h2>
+    <form method="post" action="{{ url_for('admin') }}">
+      <input type="password" name="password" placeholder="Enter admin password" />
+      <button class="btn primary" type="submit">Login</button>
+    </form>
+  {% else %}
+    <h1>Admin Dashboard</h1>
+    <p><a href="{{ url_for('admin_logout') }}" class="btn ghost">Logout</a></p>
+
+    <section class="admin-block">
+      <h3>Products</h3>
+      <form id="product-form" enctype="multipart/form-data">
+        <input name="name_hi" placeholder="Name (HI)" />
+        <input name="name_en" placeholder="Name (EN)" />
+        <input name="price" placeholder="Price display (e.g., ₹60 / 250g)" />
+        <input name="price_num" placeholder="Price numeric (60)" />
+        <input name="img" placeholder="Image URL (or upload below)" />
+        <input type="file" name="file" />
+        <button type="button" id="add-product" class="btn">Add Product</button>
+      </form>
+
+      <h4>Existing</h4>
+      <div id="admin-products">
+        {% for p in products %}
+          <div class="admin-prod">
+            <img src="{{ p.img }}" class="thumb" />
+            <div>{{ p.name_hi }} / {{ p.name_en }} — {{ p.price }}</div>
+            <div>
+              <button class="btn edit" data-id="{{ p.id }}">Edit</button>
+              <button class="btn danger delete" data-id="{{ p.id }}">Delete</button>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="admin-block">
+      <h3>Slider</h3>
+      <form id="slider-form" enctype="multipart/form-data">
+        <input name="img" placeholder="Image URL" />
+        <input type="file" name="file" />
+        <button type="button" id="add-slider" class="btn">Add</button>
+      </form>
+      <div id="admin-slider"></div>
+    </section>
+
+    <section class="admin-block">
+      <h3>Social Links</h3>
+      <form id="social-form">
+        <input name="whatsapp" placeholder="WhatsApp (https://wa.me/...)" />
+        <input name="facebook" placeholder="Facebook URL" />
+        <input name="instagram" placeholder="Instagram URL" />
+        <input name="youtube" placeholder="YouTube URL" />
+        <input name="telegram" placeholder="Telegram URL" />
+        <button class="btn" id="save-social">Save Social</button>
+      </form>
+    </section>
+
+    <section style="margin-top:12px">
+      <a href="{{ url_for('export_products_csv') }}" class="btn">Export products (CSV)</a>
+      <form id="import-csv-form" enctype="multipart/form-data" style="display:inline-block" method="post" action="{{ url_for('import_products') }}">
+        <input type="file" name="file" />
+        <button id="import-csv" class="btn ghost" type="submit">Import CSV</button>
+      </form>
+    </section>
+  {% endif %}
+</div>
+{% endblock %}
