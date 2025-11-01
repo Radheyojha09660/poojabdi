@@ -2,9 +2,11 @@
 {% block content %}
 <div class="product-single">
   <img src="{{ product.image_url() }}" alt="{{ product.name }}">
-  <h2>{{ product.name }}</h2>
-  <p>{{ product.description }}</p>
-  <p class="price">₹ {{ product.price or '0' }}</p>
-  <a class="btn" href="{{ url_for('add_to_cart', pid=product.id) }}">Add to Cart</a>
+  <div class="product-info">
+    <h2>{{ product.name }}</h2>
+    <p>{{ product.description }}</p>
+    <p class="price">₹ {{ product.price or '0' }}</p>
+    <a class="btn" href="{{ url_for('add_to_cart', pid=product.id) }}">Add to Cart</a>
+  </div>
 </div>
 {% endblock %}
