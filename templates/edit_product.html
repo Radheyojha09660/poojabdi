@@ -6,9 +6,9 @@
   <input name="price" value="{{ product.price }}">
   <textarea name="description">{{ product.description or '' }}</textarea>
   <p>Current image:</p>
-  <img src="{{ product.image_url() }}" alt="" class="thumb">
+  <img src="{{ product.image_url() }}" class="thumb">
   <label>Replace Image</label>
   <input type="file" name="image" accept="image/*">
-  <button class="btn" type="submit">Update</button>
+  <button class="btn" type="submit">Update Product</button>
 </form>
 {% endblock %}
