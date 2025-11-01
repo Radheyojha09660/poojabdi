@@ -1,9 +1,8 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="container">
-  <h2>Internal Server Error</h2>
-  <p>Server encountered an error. Please check logs. Error: {{ error }}</p>
+  <h2>Server Error</h2>
+  <p>There was a server error. Check logs. {{ error }}</p>
   <p><a href="{{ url_for('index') }}">Back to Home</a></p>
 </div>
 {% endblock %}
-
