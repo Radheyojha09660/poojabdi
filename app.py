@@ -1,10 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY','dev-secret')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///poojabdi.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -46,15 +46,6 @@ def get_settings():
         db.session.commit()
     return s
 
-def admin_required(fn):
-    from functools import wraps
-    @wraps(fn)
-    def wrapper(*a, **k):
-        if 'admin_id' not in session:
-            return redirect(url_for('admin_login'))
-        return fn(*a, **k)
-    return wrapper
-
 # Routes
 @app.route('/')
 def index():
@@ -73,16 +64,11 @@ def view_cart():
     settings = get_settings()
     return render_template('cart.html', settings=settings)
 
+# API for products
 @app.route('/api/products')
 def api_products():
     prods = Product.query.filter_by(active=True).all()
-    return jsonify([{
-        'id': p.id,
-        'title': p.title,
-        'price': p.price,
-        'image': p.image,
-        'slug': p.slug
-    } for p in prods])
+    return jsonify([{'id': p.id, 'title': p.title, 'price': p.price, 'image': p.image, 'slug': p.slug} for p in prods])
 
 # Admin routes
 @app.route('/admin/login', methods=['GET','POST'])
@@ -96,6 +82,15 @@ def admin_login():
             return redirect(url_for('admin_dashboard'))
         flash('Invalid credentials','danger')
     return render_template('admin/login.html')
+
+def admin_required(fn):
+    from functools import wraps
+    @wraps(fn)
+    def wrapper(*a, **k):
+        if 'admin_id' not in session:
+            return redirect(url_for('admin_login'))
+        return fn(*a, **k)
+    return wrapper
 
 @app.route('/admin/logout')
 def admin_logout():
@@ -171,7 +166,7 @@ def admin_preview(pid):
     settings = get_settings()
     return render_template('admin/preview.html', product=p, settings=settings)
 
-# CLI command to init DB
+# Init DB
 @app.cli.command('init-db')
 def init_db():
     db.create_all()
