@@ -1,17 +1,11 @@
-<!DOCTYPE html>
-<html lang="hi">
-<head>
-<meta charset="UTF-8">
-<title>Admin Login</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-<div class="login-box">
-  <h2>Admin Login</h2>
-  <form method="POST">
-    <input type="password" name="password" placeholder="Enter Password" required>
-    <button type="submit">Login</button>
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-md mx-auto bg-white p-6 rounded shadow">
+  <h2 class="text-xl font-bold mb-4">Admin Login</h2>
+  <form method="post">
+    <label class="block">Username <input name="username" class="w-full border p-2 rounded mt-1"></label>
+    <label class="block mt-3">Password <input type="password" name="password" class="w-full border p-2 rounded mt-1"></label>
+    <div class="mt-4"><button class="px-4 py-2 rounded bg-blue-600 text-white">Login</button></div>
   </form>
 </div>
-</body>
-</html>
+{% endblock %}
