@@ -1,231 +1,189 @@
-import os
-import time
-from flask import (
-    Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_from_directory
-)
+from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session
 from flask_sqlalchemy import SQLAlchemy
-from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
+import os
 
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 app = Flask(__name__)
-app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change_this_secret_key")
-app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{os.path.join(BASE_DIR, 'poojabdi.db')}"
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
-# Uploads
-UPLOAD_FOLDER = os.path.join(BASE_DIR, "static", "uploads")
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-ALLOWED_EXT = {"png", "jpg", "jpeg", "webp", "gif"}
-app.config["MAX_CONTENT_LENGTH"] = 12 * 1024 * 1024  # 12 MB
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY','dev-secret')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///poojabdi.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
 # Models
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(240), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text, nullable=True)
-    price = db.Column(db.String(50), nullable=True)
-    image = db.Column(db.String(300), nullable=True)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    price = db.Column(db.Float, nullable=False)
+    image = db.Column(db.String(500), nullable=True)
+    slug = db.Column(db.String(200), unique=True, nullable=False)
+    active = db.Column(db.Boolean, default=True)
 
-    def image_url(self):
-        if self.image:
-            return url_for("static", filename=f"uploads/{self.image}")
-        return url_for("static", filename="uploads/placeholder.png")
-
-class Contact(db.Model):
+class Setting(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(200))
-    email = db.Column(db.String(200))
-    message = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    site_name = db.Column(db.String(200), default='पूजा बड़ी पापड़ उद्योग')
+    tagline = db.Column(db.String(300), default='राजस्थान की पारंपरिक रेसिपी का स्वाद')
+    logo = db.Column(db.String(500), default='')
+    accent = db.Column(db.String(20), default='#ef4444')
+
+class Admin(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password_hash = db.Column(db.String(200), nullable=False)
+
+    def set_password(self, pw):
+        self.password_hash = generate_password_hash(pw)
+    def check_password(self, pw):
+        return check_password_hash(self.password_hash, pw)
 
 # Helpers
-def allowed_file(fname):
-    return "." in fname and fname.rsplit(".", 1)[1].lower() in ALLOWED_EXT
-
-# DB init
-with app.app_context():
-    db.create_all()
-
-# Public routes
-@app.route("/")
-def index():
-    products = Product.query.order_by(Product.created_at.desc()).all()
-    return render_template("index.html", products=products)
-
-@app.route("/product/<int:pid>")
-def product_view(pid):
-    p = Product.query.get_or_404(pid)
-    return render_template("product_view.html", product=p)
-
-# Cart
-@app.route("/add-to-cart/<int:pid>")
-def add_to_cart(pid):
-    cart = session.get("cart", [])
-    if pid not in cart:
-        cart.append(pid)
-    session["cart"] = cart
-    flash("Product added to cart.", "success")
-    return redirect(request.referrer or url_for("index"))
-
-@app.route("/remove-from-cart/<int:pid>")
-def remove_from_cart(pid):
-    cart = session.get("cart", [])
-    cart = [i for i in cart if i != pid]
-    session["cart"] = cart
-    flash("Removed from cart.", "info")
-    return redirect(url_for("cart_view"))
-
-@app.route("/cart")
-def cart_view():
-    cart = session.get("cart", [])
-    products = Product.query.filter(Product.id.in_(cart)).all() if cart else []
-    total = sum(float(p.price or 0) for p in products)
-    return render_template("cart.html", products=products, total=total)
-
-# Contact
-@app.route("/contact", methods=["GET", "POST"])
-def contact():
-    if request.method == "POST":
-        name = request.form.get("name", "").strip()
-        email = request.form.get("email", "").strip()
-        message = request.form.get("message", "").strip()
-        c = Contact(name=name, email=email, message=message)
-        db.session.add(c)
+def get_settings():
+    s = Setting.query.first()
+    if not s:
+        s = Setting()
+        db.session.add(s)
         db.session.commit()
-        flash("Message received. We'll contact you shortly.", "success")
-        return redirect(url_for("contact"))
-    return render_template("contact.html")
+    return s
 
-# Admin auth
-@app.route("/admin/login", methods=["GET", "POST"])
+# Routes
+@app.route('/')
+def index():
+    settings = get_settings()
+    products = Product.query.filter_by(active=True).all()
+    return render_template('index.html', products=products, settings=settings)
+
+@app.route('/product/<slug>')
+def product_detail(slug):
+    p = Product.query.filter_by(slug=slug).first_or_404()
+    settings = get_settings()
+    return render_template('product.html', product=p, settings=settings)
+
+@app.route('/cart')
+def view_cart():
+    settings = get_settings()
+    return render_template('cart.html', settings=settings)
+
+# API: add-to-cart (server side optional) — simplified
+@app.route('/api/products')
+def api_products():
+    prods = Product.query.filter_by(active=True).all()
+    return jsonify([{
+        'id': p.id,
+        'title': p.title,
+        'price': p.price,
+        'image': p.image,
+        'slug': p.slug
+    } for p in prods])
+
+# Admin
+@app.route('/admin/login', methods=['GET','POST'])
 def admin_login():
-    if request.method == "POST":
-        pw = request.form.get("password", "")
-        if pw == os.environ.get("ADMIN_PASSWORD", "admin123"):
-            session["is_admin"] = True
-            flash("Welcome admin", "success")
-            return redirect(url_for("admin_dashboard"))
-        flash("Incorrect password", "danger")
-    return render_template("admin_login.html")
+    if request.method == 'POST':
+        u = request.form['username']
+        p = request.form['password']
+        admin = Admin.query.filter_by(username=u).first()
+        if admin and admin.check_password(p):
+            session['admin_id'] = admin.id
+            return redirect(url_for('admin_dashboard'))
+        flash('Invalid credentials','danger')
+    return render_template('admin/login.html')
 
-@app.route("/admin/logout")
-def admin_logout():
-    session.pop("is_admin", None)
-    flash("Logged out", "info")
-    return redirect(url_for("index"))
-
-def require_admin(fn):
+def admin_required(fn):
     from functools import wraps
     @wraps(fn)
-    def wrapper(*a, **kw):
-        if not session.get("is_admin"):
-            flash("Please login as admin", "warning")
-            return redirect(url_for("admin_login"))
-        return fn(*a, **kw)
+    def wrapper(*a, **k):
+        if 'admin_id' not in session:
+            return redirect(url_for('admin_login'))
+        return fn(*a, **k)
     return wrapper
 
-# Admin dashboard & CRUD
-@app.route("/admin")
-@require_admin
-def admin_dashboard():
-    products = Product.query.order_by(Product.created_at.desc()).all()
-    return render_template("admin_dashboard.html", products=products)
+@app.route('/admin/logout')
+def admin_logout():
+    session.pop('admin_id', None)
+    return redirect(url_for('admin_login'))
 
-@app.route("/admin/add", methods=["GET", "POST"])
-@require_admin
-def admin_add():
-    if request.method == "POST":
-        name = request.form.get("name", "").strip()
-        description = request.form.get("description", "").strip()
-        price = request.form.get("price", "").strip()
-        image_file = request.files.get("image")
-        filename = None
-        if image_file and image_file.filename:
-            if allowed_file(image_file.filename):
-                filename = secure_filename(image_file.filename)
-                filename = f"{int(time.time())}_{filename}"
-                image_file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
-            else:
-                flash("File type not allowed", "danger")
-                return redirect(url_for("admin_add"))
-        p = Product(name=name, description=description, price=price, image=filename)
+@app.route('/admin')
+@admin_required
+def admin_dashboard():
+    products = Product.query.order_by(Product.id.desc()).all()
+    settings = get_settings()
+    return render_template('admin/dashboard.html', products=products, settings=settings)
+
+@app.route('/admin/product/new', methods=['GET','POST'])
+@admin_required
+def admin_new_product():
+    if request.method=='POST':
+        title = request.form['title']
+        slug = request.form['slug']
+        price = float(request.form['price'])
+        desc = request.form.get('description','')
+        image = request.form.get('image','')
+        p = Product(title=title, slug=slug, price=price, description=desc, image=image)
         db.session.add(p)
         db.session.commit()
-        flash("Product added", "success")
-        return redirect(url_for("admin_dashboard"))
-    return render_template("add_product.html")
+        flash('Product added','success')
+        return redirect(url_for('admin_dashboard'))
+    return render_template('admin/product_form.html', product=None)
 
-@app.route("/admin/edit/<int:pid>", methods=["GET", "POST"])
-@require_admin
-def admin_edit(pid):
+@app.route('/admin/product/edit/<int:pid>', methods=['GET','POST'])
+@admin_required
+def admin_edit_product(pid):
     p = Product.query.get_or_404(pid)
-    if request.method == "POST":
-        p.name = request.form.get("name", p.name).strip()
-        p.description = request.form.get("description", p.description).strip()
-        p.price = request.form.get("price", p.price).strip()
-        image_file = request.files.get("image")
-        if image_file and image_file.filename:
-            if allowed_file(image_file.filename):
-                filename = secure_filename(image_file.filename)
-                filename = f"{int(time.time())}_{filename}"
-                image_file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
-                try:
-                    if p.image:
-                        os.remove(os.path.join(app.config["UPLOAD_FOLDER"], p.image))
-                except Exception:
-                    pass
-                p.image = filename
-            else:
-                flash("File type not allowed", "danger")
-                return redirect(url_for("admin_edit", pid=pid))
+    if request.method=='POST':
+        p.title = request.form['title']
+        p.slug = request.form['slug']
+        p.price = float(request.form['price'])
+        p.description = request.form.get('description','')
+        p.image = request.form.get('image','')
+        p.active = bool(request.form.get('active'))
         db.session.commit()
-        flash("Product updated", "success")
-        return redirect(url_for("admin_dashboard"))
-    return render_template("edit_product.html", product=p)
+        flash('Product updated','success')
+        return redirect(url_for('admin_dashboard'))
+    return render_template('admin/product_form.html', product=p)
 
-@app.route("/admin/delete/<int:pid>", methods=["POST"])
-@require_admin
-def admin_delete(pid):
+@app.route('/admin/product/delete/<int:pid>', methods=['POST'])
+@admin_required
+def admin_delete_product(pid):
     p = Product.query.get_or_404(pid)
-    try:
-        if p.image:
-            os.remove(os.path.join(app.config["UPLOAD_FOLDER"], p.image))
-    except Exception:
-        pass
     db.session.delete(p)
     db.session.commit()
-    flash("Product deleted", "info")
-    return redirect(url_for("admin_dashboard"))
+    flash('Deleted','success')
+    return redirect(url_for('admin_dashboard'))
 
-# API for instant updates (AJAX)
-@app.route("/api/update_product/<int:pid>", methods=["POST"])
-@require_admin
-def api_update_product(pid):
+@app.route('/admin/settings', methods=['GET','POST'])
+@admin_required
+def admin_settings():
+    s = get_settings()
+    if request.method=='POST':
+        s.site_name = request.form.get('site_name', s.site_name)
+        s.tagline = request.form.get('tagline', s.tagline)
+        s.logo = request.form.get('logo', s.logo)
+        s.accent = request.form.get('accent', s.accent)
+        db.session.commit()
+        flash('Settings saved and applied','success')
+        return redirect(url_for('admin_dashboard'))
+    return render_template('admin/settings.html', settings=s)
+
+@app.route('/admin/preview/<int:pid>')
+@admin_required
+def admin_preview(pid):
     p = Product.query.get_or_404(pid)
-    data = request.form
-    if "name" in data:
-        p.name = data.get("name", p.name)
-    if "description" in data:
-        p.description = data.get("description", p.description)
-    if "price" in data:
-        p.price = data.get("price", p.price)
+    settings = get_settings()
+    return render_template('admin/preview.html', product=p, settings=settings)
+
+# Init DB helper
+@app.cli.command('init-db')
+def init_db():
+    db.create_all()
+    if not Admin.query.first():
+        a = Admin(username='admin')
+        a.set_password('admin123')
+        db.session.add(a)
+    if not Setting.query.first():
+        db.session.add(Setting())
     db.session.commit()
-    return jsonify({"status": "ok", "product": {"id": p.id, "name": p.name, "description": p.description, "price": p.price, "image_url": p.image_url()}})
+    print('DB initialized')
 
-# Serve uploads
-@app.route("/uploads/<path:filename>")
-def uploaded_file(filename):
-    return send_from_directory(app.config["UPLOAD_FOLDER"], filename, as_attachment=False)
-
-# Run (Render safe)
-if __name__ == "__main__":
-    port_env = os.environ.get("PORT")
-    try:
-        port = int(port_env) if port_env and port_env.strip().isdigit() else 5000
-    except Exception:
-        port = 5000
-    app.run(host="0.0.0.0", port=port, debug=False)
+if __name__=='__main__':
+    app.run(debug=True)
