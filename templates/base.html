@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="hi">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>{{ settings.site_name if settings else 'Poojabdi' }} - {{ settings.tagline if settings else '' }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  </head>
+  <body class="bg-gray-50 font-sans">
+    <header class="shadow-sm bg-white">
+      <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          {% if settings and settings.logo %}
+            <img src="{{ settings.logo }}" alt="logo" class="h-12 w-12 rounded-full object-cover">
+          {% else %}
+            <div class="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center">पी</div>
+          {% endif %}
+          <div>
+            <h1 class="text-xl font-semibold">{{ settings.site_name }}</h1>
+            <p class="text-sm text-gray-500">{{ settings.tagline }}</p>
+          </div>
+        </div>
+        <nav class="flex items-center gap-4">
+          <a href="/" class="hover:underline">Home</a>
+          <a href="/cart" class="relative">Cart <span id="cart-count" class="ml-1 rounded-full text-xs px-2 py-0.5 bg-red-500 text-white">0</span></a>
+          <a href="/admin" class="text-sm px-3 py-1 border rounded">Admin</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto p-4">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="mt-4">
+            {% for cat, msg in messages %}
+              <div class="p-3 rounded mb-2 {{ 'bg-green-100 text-green-800' if cat=='success' else 'bg-red-100 text-red-800' }}">{{ msg }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="mt-12 py-8 bg-white">
+      <div class="max-w-6xl mx-auto px-4 text-center text-gray-500">© {{ settings.site_name }} {{ 2025 }}</div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/cart.js') }}"></script>
+  </body>
+</html>
