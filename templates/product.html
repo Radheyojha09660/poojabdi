@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+  <div class="md:col-span-2 bg-white p-4 rounded shadow">
+    <img src="{{ product.image or 'https://via.placeholder.com/800x500' }}" class="w-full h-96 object-cover rounded">
+    <h2 class="mt-4 text-2xl font-bold">{{ product.title }}</h2>
+    <p class="mt-2 text-gray-600">{{ product.description }}</p>
+  </div>
+  <aside class="bg-white p-4 rounded shadow">
+    <div class="text-xl">₹{{ '%.2f'|format(product.price) }}</div>
+    <button onclick="addToCart({{ product.id }}, '{{ product.title }}', {{ product.price }})" class="mt-4 w-full py-2 rounded bg-[var(--accent,#ef4444)] text-white">Add to cart</button>
+  </aside>
+</div>
+{% endblock %}
+
