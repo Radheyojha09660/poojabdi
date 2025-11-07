@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="flex justify-between items-center mb-4">
+  <h2 class="text-2xl font-bold">Admin Dashboard</h2>
+  <div class="flex gap-2">
+    <a href="/admin/product/new" class="px-3 py-1 rounded border">New Product</a>
+    <a href="/admin/settings" class="px-3 py-1 rounded border">Settings</a>
+    <a href="/admin/logout" class="px-3 py-1 rounded border">Logout</a>
+  </div>
+</div>
+<table class="w-full bg-white rounded shadow">
+  <thead class="bg-gray-100">
+    <tr>
+      <th class="p-2">#</th>
+      <th>Title</th>
+      <th>Price</th>
+      <th>Active</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for p in products %}
+    <tr class="border-t">
+      <td class="p-2">{{ p.id }}</td>
+      <td>{{ p.title }}</td>
+      <td>₹{{ '%.2f'|format(p.price) }}</td>
+      <td>{{ 'Yes' if p.active else 'No' }}</td>
+      <td class="p-2">
+        <a href="/admin/product/edit/{{ p.id }}" class="px-2 py-1 border rounded">Edit</a>
+        <form action="/admin/product/delete/{{ p.id }}" method="post" style="display:inline" onsubmit="return confirm('Delete?')">
+          <button class="px-2 py-1 border rounded">Delete</button>
+        </form>
+        <a href="/admin/preview/{{ p.id }}" class="px-2 py-1 border rounded">Preview</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
