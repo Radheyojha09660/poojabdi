@@ -1,17 +1,16 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% block content %}
-<h2 class="text-2xl font-bold mb-6">Products</h2>
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-  {% for p in products %}
-  <div class="bg-white p-4 rounded-lg shadow hover:shadow-lg transform hover:-translate-y-1 transition">
-    <img src="{{ p.image or 'https://via.placeholder.com/400x300' }}" alt="{{ p.title }}" class="h-40 w-full object-cover rounded">
-    <h3 class="mt-3 font-semibold">{{ p.title }}</h3>
-    <p class="text-sm text-gray-500">₹{{ '%.2f'|format(p.price) }}</p>
-    <div class="mt-3 flex gap-2">
-      <a href="/product/{{ p.slug }}" class="px-3 py-1 border rounded">View</a>
-      <button onclick="addToCart({{ p.id }}, '{{ p.title }}', {{ p.price }})" class="ml-auto px-3 py-1 rounded bg-[var(--accent,#ef4444)] text-white">Add</button>
-    </div>
-  </div>
-  {% endfor %}
+
+<h2>Our Products</h2>
+
+<div class="product-grid">
+    {% for p in products %}
+    <a href="/product/{{ p.id }}" class="card">
+        <img src="{{ p.img }}" alt="">
+        <h3>{{ p.name }}</h3>
+        <p>₹{{ p.price }}</p>
+    </a>
+    {% endfor %}
 </div>
+
 {% endblock %}
